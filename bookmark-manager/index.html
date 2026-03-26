@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bookmark Manager</title>
+  <style>
+    /* ABOUTME: Styles for a dark-themed, minimal bookmark manager. */
+    /* ABOUTME: Single-column layout with collapsible form, search, tag filters, and bookmark cards. */
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      line-height: 1.6;
+      padding: 2.5rem 1.25rem;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #f0f0f0;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.01em;
+    }
+
+    /* --- Toggle Button for Add Form --- */
+
+    .toggle-form-btn {
+      display: block;
+      width: 100%;
+      padding: 0.6rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      font-weight: 500;
+      color: #8ab4f8;
+      background: #16213e;
+      border: 1px dashed #2a3a5c;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 1.5rem;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .toggle-form-btn:hover {
+      background: #1a2744;
+      border-color: #3a5a8c;
+    }
+
+    .toggle-form-btn.hidden {
+      display: none;
+    }
+
+    /* --- Add Bookmark Form --- */
+
+    .add-form {
+      background: #16213e;
+      border: 1px solid #2a3a5c;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      margin-bottom: 0;
+      transition: max-height 0.3s ease, opacity 0.2s ease,
+                  padding 0.3s ease, margin 0.3s ease;
+    }
+
+    .add-form.open {
+      max-height: 500px;
+      opacity: 1;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .add-form label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin-bottom: 0.3rem;
+      color: #8899aa;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .add-form input,
+    .add-form textarea {
+      width: 100%;
+      padding: 0.55rem 0.65rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: #e0e0e0;
+      background: #0f1a2e;
+      border: 1px solid #2a3a5c;
+      border-radius: 6px;
+      margin-bottom: 0.85rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .add-form textarea {
+      resize: vertical;
+      min-height: 3rem;
+    }
+
+    .add-form input:focus,
+    .add-form textarea:focus {
+      outline: none;
+      border-color: #5b8def;
+      box-shadow: 0 0 0 2px rgba(91, 141, 239, 0.25);
+    }
+
+    .form-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .form-buttons button {
+      flex: 1;
+      padding: 0.55rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      font-weight: 500;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .form-buttons button[type="submit"] {
+      color: #fff;
+      background: #5b8def;
+    }
+
+    .form-buttons button[type="submit"]:hover {
+      background: #4a7be0;
+    }
+
+    .form-buttons button[type="button"] {
+      color: #8899aa;
+      background: #0f1a2e;
+      border: 1px solid #2a3a5c;
+    }
+
+    .form-buttons button[type="button"]:hover {
+      background: #162035;
+    }
+
+    /* --- Search and Tag Filter Bar --- */
+
+    .filter-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      color: #e0e0e0;
+      background: #16213e;
+      border: 1px solid #2a3a5c;
+      border-radius: 6px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: #5b8def;
+      box-shadow: 0 0 0 2px rgba(91, 141, 239, 0.25);
+    }
+
+    .tag-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .tag-filter {
+      font-size: 0.75rem;
+      font-family: inherit;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      border: 1px solid #2a3a5c;
+      background: transparent;
+      color: #8899aa;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tag-filter:hover {
+      border-color: #5b8def;
+      color: #8ab4f8;
+    }
+
+    .tag-filter.active {
+      background: #5b8def;
+      border-color: #5b8def;
+      color: #fff;
+    }
+
+    /* --- Bookmark List --- */
+
+    .bookmark-list {
+      list-style: none;
+    }
+
+    .bookmark-list li {
+      background: #16213e;
+      border: 1px solid #2a3a5c;
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      margin-bottom: 0.6rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .bookmark-info {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .bookmark-title {
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+
+    .bookmark-title a {
+      color: #e0e0e0;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .bookmark-title a:hover {
+      color: #8ab4f8;
+    }
+
+    .bookmark-domain {
+      font-size: 0.75rem;
+      color: #5a6a7a;
+      margin-top: 0.1rem;
+    }
+
+    .bookmark-notes {
+      font-size: 0.85rem;
+      color: #8899aa;
+      margin-top: 0.35rem;
+      line-height: 1.5;
+    }
+
+    .bookmark-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.45rem;
+    }
+
+    .tag-badge {
+      font-size: 0.7rem;
+      background: rgba(91, 141, 239, 0.15);
+      color: #8ab4f8;
+      padding: 0.1rem 0.5rem;
+      border-radius: 9999px;
+    }
+
+    .bookmark-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .action-btn {
+      background: none;
+      border: none;
+      color: #4a5a6a;
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: 0.2rem;
+      line-height: 1;
+      transition: color 0.15s;
+    }
+
+    .action-btn:hover {
+      color: #8ab4f8;
+    }
+
+    .action-btn.delete:hover {
+      color: #f87171;
+    }
+
+    /* --- Inline Edit Form --- */
+
+    .edit-form {
+      width: 100%;
+    }
+
+    .edit-form label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #8899aa;
+      margin-bottom: 0.15rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .edit-form input,
+    .edit-form textarea {
+      width: 100%;
+      padding: 0.45rem 0.6rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: #e0e0e0;
+      background: #0f1a2e;
+      border: 1px solid #2a3a5c;
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .edit-form textarea {
+      resize: vertical;
+      min-height: 2.5rem;
+    }
+
+    .edit-form input:focus,
+    .edit-form textarea:focus {
+      outline: none;
+      border-color: #5b8def;
+      box-shadow: 0 0 0 2px rgba(91, 141, 239, 0.25);
+    }
+
+    .edit-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .edit-actions button {
+      padding: 0.35rem 0.85rem;
+      font-size: 0.85rem;
+      font-family: inherit;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .edit-actions button.save {
+      background: #5b8def;
+      border: none;
+      color: #fff;
+    }
+
+    .edit-actions button.save:hover {
+      background: #4a7be0;
+    }
+
+    .edit-actions button.cancel {
+      background: transparent;
+      border: 1px solid #2a3a5c;
+      color: #8899aa;
+    }
+
+    .edit-actions button.cancel:hover {
+      background: #0f1a2e;
+    }
+
+    /* --- Empty State --- */
+
+    .empty-message {
+      text-align: center;
+      color: #5a6a7a;
+      font-size: 0.9rem;
+      padding: 2.5rem 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Bookmarks</h1>
+
+  <button class="toggle-form-btn" id="toggle-form-btn">+ Add Bookmark</button>
+
+  <form class="add-form" id="add-form">
+    <label for="url-input">URL</label>
+    <input type="url" id="url-input" placeholder="https://example.com" required>
+    <label for="title-input">Title</label>
+    <input type="text" id="title-input" placeholder="Example Site" required>
+    <label for="notes-input">Notes</label>
+    <textarea id="notes-input" placeholder="Why is this useful? (optional)"></textarea>
+    <label for="tags-input">Tags</label>
+    <input type="text" id="tags-input" placeholder="tutorial, css, reference (optional)">
+    <div class="form-buttons">
+      <button type="submit">Save</button>
+      <button type="button" id="cancel-form-btn">Cancel</button>
+    </div>
+  </form>
+
+  <div class="filter-bar">
+    <input type="text" class="search-input" id="search-input" placeholder="Search bookmarks...">
+    <div class="tag-filters" id="tag-filters"></div>
+  </div>
+
+  <ul class="bookmark-list" id="bookmark-list"></ul>
+
+<script>
+  // ABOUTME: Core logic for the bookmark manager.
+  // ABOUTME: Handles adding, deleting, rendering bookmarks and localStorage persistence.
+
+  const STORAGE_KEY = 'bookmarks';
+
+  function loadBookmarks() {
+    const data = localStorage.getItem(STORAGE_KEY);
+    return data ? JSON.parse(data) : [];
+  }
+
+  function saveBookmarks(bookmarks) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks));
+  }
+
+  function extractDomain(url) {
+    try {
+      return new URL(url).hostname.replace(/^www\./, '');
+    } catch {
+      return '';
+    }
+  }
+
+  function parseTags(input) {
+    return input
+      .split(',')
+      .map(tag => tag.trim().toLowerCase())
+      .filter(tag => tag.length > 0);
+  }
+
+  function addBookmark(url, title, notes, tags) {
+    const bookmarks = loadBookmarks();
+    bookmarks.unshift({
+      id: crypto.randomUUID(),
+      url: url,
+      title: title,
+      notes: notes,
+      tags: tags,
+      createdAt: new Date().toISOString()
+    });
+    saveBookmarks(bookmarks);
+    return bookmarks;
+  }
+
+  function updateBookmark(id, fields) {
+    const bookmarks = loadBookmarks();
+    const bookmark = bookmarks.find(b => b.id === id);
+    if (bookmark) {
+      Object.assign(bookmark, fields);
+      saveBookmarks(bookmarks);
+    }
+    return bookmarks;
+  }
+
+  function deleteBookmark(id) {
+    const bookmarks = loadBookmarks().filter(b => b.id !== id);
+    saveBookmarks(bookmarks);
+    return bookmarks;
+  }
+
+  // --- Filter State ---
+
+  const activeTags = new Set();
+  let searchQuery = '';
+
+  function getAllTags(bookmarks) {
+    const tagSet = new Set();
+    for (const bookmark of bookmarks) {
+      for (const tag of (bookmark.tags || [])) {
+        tagSet.add(tag);
+      }
+    }
+    return Array.from(tagSet).sort();
+  }
+
+  function filterBookmarks(bookmarks) {
+    return bookmarks.filter(b => {
+      if (activeTags.size > 0) {
+        const bookmarkTags = b.tags || [];
+        for (const tag of activeTags) {
+          if (!bookmarkTags.includes(tag)) return false;
+        }
+      }
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const inTitle = b.title.toLowerCase().includes(q);
+        const inNotes = (b.notes || '').toLowerCase().includes(q);
+        if (!inTitle && !inNotes) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }
+
+  // --- Rendering ---
+
+  const listEl = document.getElementById('bookmark-list');
+  const tagFiltersEl = document.getElementById('tag-filters');
+  const searchInput = document.getElementById('search-input');
+
+  function renderTagFilters(bookmarks) {
+    tagFiltersEl.innerHTML = '';
+    const allTags = getAllTags(bookmarks);
+    if (allTags.length === 0) return;
+
+    for (const tag of allTags) {
+      const btn = document.createElement('button');
+      btn.className = 'tag-filter';
+      if (activeTags.has(tag)) {
+        btn.className += ' active';
+      }
+      btn.textContent = tag;
+      btn.addEventListener('click', () => {
+        if (activeTags.has(tag)) {
+          activeTags.delete(tag);
+        } else {
+          activeTags.add(tag);
+        }
+        renderAll();
+      });
+      tagFiltersEl.appendChild(btn);
+    }
+  }
+
+  function renderBookmarkView(li, bookmark) {
+    li.innerHTML = '';
+
+    const info = document.createElement('div');
+    info.className = 'bookmark-info';
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'bookmark-title';
+    const link = document.createElement('a');
+    link.href = bookmark.url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = bookmark.title;
+    titleEl.appendChild(link);
+
+    info.appendChild(titleEl);
+
+    const domain = extractDomain(bookmark.url);
+    if (domain) {
+      const domainEl = document.createElement('div');
+      domainEl.className = 'bookmark-domain';
+      domainEl.textContent = domain;
+      info.appendChild(domainEl);
+    }
+
+    if (bookmark.notes) {
+      const notesEl = document.createElement('div');
+      notesEl.className = 'bookmark-notes';
+      notesEl.textContent = bookmark.notes;
+      info.appendChild(notesEl);
+    }
+
+    if (bookmark.tags && bookmark.tags.length > 0) {
+      const tagsEl = document.createElement('div');
+      tagsEl.className = 'bookmark-tags';
+      for (const tag of bookmark.tags) {
+        const badge = document.createElement('span');
+        badge.className = 'tag-badge';
+        badge.textContent = tag;
+        tagsEl.appendChild(badge);
+      }
+      info.appendChild(tagsEl);
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'bookmark-actions';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'action-btn';
+    editBtn.textContent = '✎';
+    editBtn.title = 'Edit bookmark';
+    editBtn.addEventListener('click', () => {
+      renderBookmarkEdit(li, bookmark);
+    });
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'action-btn delete';
+    deleteBtn.textContent = '✕';
+    deleteBtn.title = 'Delete bookmark';
+    deleteBtn.addEventListener('click', () => {
+      if (confirm('Delete "' + bookmark.title + '"?')) {
+        deleteBookmark(bookmark.id);
+        renderAll();
+      }
+    });
+
+    actions.appendChild(editBtn);
+    actions.appendChild(deleteBtn);
+
+    li.appendChild(info);
+    li.appendChild(actions);
+  }
+
+  function renderBookmarkEdit(li, bookmark) {
+    li.innerHTML = '';
+
+    const form = document.createElement('div');
+    form.className = 'edit-form';
+
+    const urlLabel = document.createElement('label');
+    urlLabel.textContent = 'URL';
+    const urlField = document.createElement('input');
+    urlField.type = 'url';
+    urlField.value = bookmark.url;
+
+    const titleLabel = document.createElement('label');
+    titleLabel.textContent = 'Title';
+    const titleField = document.createElement('input');
+    titleField.type = 'text';
+    titleField.value = bookmark.title;
+
+    const notesLabel = document.createElement('label');
+    notesLabel.textContent = 'Notes';
+    const notesField = document.createElement('textarea');
+    notesField.value = bookmark.notes || '';
+
+    const tagsLabel = document.createElement('label');
+    tagsLabel.textContent = 'Tags';
+    const tagsField = document.createElement('input');
+    tagsField.type = 'text';
+    tagsField.value = (bookmark.tags || []).join(', ');
+
+    const actions = document.createElement('div');
+    actions.className = 'edit-actions';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'save';
+    saveBtn.textContent = 'Save';
+    saveBtn.addEventListener('click', () => {
+      const url = urlField.value.trim();
+      const title = titleField.value.trim();
+      if (!url || !title) return;
+      updateBookmark(bookmark.id, {
+        url: url,
+        title: title,
+        notes: notesField.value.trim(),
+        tags: parseTags(tagsField.value)
+      });
+      renderAll();
+    });
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'cancel';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', () => {
+      renderBookmarkView(li, bookmark);
+    });
+
+    actions.appendChild(saveBtn);
+    actions.appendChild(cancelBtn);
+
+    form.appendChild(urlLabel);
+    form.appendChild(urlField);
+    form.appendChild(titleLabel);
+    form.appendChild(titleField);
+    form.appendChild(notesLabel);
+    form.appendChild(notesField);
+    form.appendChild(tagsLabel);
+    form.appendChild(tagsField);
+    form.appendChild(actions);
+
+    li.appendChild(form);
+    titleField.focus();
+  }
+
+  function render(bookmarks) {
+    listEl.innerHTML = '';
+
+    if (bookmarks.length === 0) {
+      const allBookmarks = loadBookmarks();
+      const msg = allBookmarks.length === 0
+        ? 'No bookmarks yet.'
+        : 'No bookmarks match your filters.';
+      listEl.innerHTML = '<p class="empty-message">' + msg + '</p>';
+      return;
+    }
+
+    for (const bookmark of bookmarks) {
+      const li = document.createElement('li');
+      renderBookmarkView(li, bookmark);
+      listEl.appendChild(li);
+    }
+  }
+
+  function renderAll() {
+    const allBookmarks = loadBookmarks();
+    renderTagFilters(allBookmarks);
+    render(filterBookmarks(allBookmarks));
+  }
+
+  // --- Event Handling ---
+
+  const addForm = document.getElementById('add-form');
+  const toggleFormBtn = document.getElementById('toggle-form-btn');
+  const cancelFormBtn = document.getElementById('cancel-form-btn');
+  const urlInput = document.getElementById('url-input');
+  const titleInput = document.getElementById('title-input');
+  const notesInput = document.getElementById('notes-input');
+  const tagsInput = document.getElementById('tags-input');
+
+  function openForm() {
+    addForm.classList.add('open');
+    toggleFormBtn.classList.add('hidden');
+    urlInput.focus();
+  }
+
+  function closeForm() {
+    addForm.classList.remove('open');
+    toggleFormBtn.classList.remove('hidden');
+    addForm.reset();
+  }
+
+  toggleFormBtn.addEventListener('click', openForm);
+  cancelFormBtn.addEventListener('click', closeForm);
+
+  addForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const url = urlInput.value.trim();
+    const title = titleInput.value.trim();
+    const notes = notesInput.value.trim();
+    const tags = parseTags(tagsInput.value);
+    if (!url || !title) return;
+    addBookmark(url, title, notes, tags);
+    renderAll();
+    closeForm();
+  });
+
+  searchInput.addEventListener('input', () => {
+    searchQuery = searchInput.value.trim();
+    renderAll();
+  });
+
+  // --- Initial Render ---
+
+  renderAll();
+</script>
+
+</body>
+</html>
